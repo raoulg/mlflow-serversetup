@@ -155,28 +155,9 @@ def main():
 
     # Simplified README
     readme_content = """# MLflow Multi-Team Local Setup
-
-## Quick Start
-
-1. Run setup:
-   ```bash
-   ./setup.sh
-   ```
-
-2. Start services:
-   ```bash
-   docker compose up -d
-   ```
-
 ## Team URLs
 
 {}
-
-## Security Notes
-
-- All teams share a single database but have isolated artifact storage
-- Web interfaces are accessible via configured IP/ports
-- This is a local development setup - add proper authentication for production use
 """
 
     connection_details = []
@@ -185,9 +166,9 @@ def main():
         details = f"- {team}: http://localhost:{port}"
         connection_details.append(details)
 
-    with open("README.md", "w") as f:
+    with open("team_urls.md", "w") as f:
         f.write(readme_content.format("\n".join(connection_details)))
-    print("Generated README.md")
+    print("Generated team_urls.md")
 
 
 if __name__ == "__main__":
