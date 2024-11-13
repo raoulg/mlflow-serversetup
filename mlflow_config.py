@@ -1,13 +1,22 @@
 import os
+import tomllib
+from pathlib import Path
 from string import Template
 
-# Configuration
-TEAMS = ["team-a", "team-b", "team-c", "team-d", "team-e"]
-BASE_PORT = 5000
 
-# Simple local password - since this is for local development
-LOCAL_DB_PASSWORD = "mlflow_local"
+def _load_config() -> dict:
+    config_path = Path("config.toml")
+    if not config_path.exists():
+        raise FileNotFoundError
+    else:
+    with config_path.open("rb") as f:
+        return tomllib.load(f)
 
+_config = _load_config()
+
+TEAMS: list[str] = _config["teams"]["team_list"]
+BASE_PORT: int = int(_config["server"]["base_port"])
+LOCAL_DB_PASSWORD: str = _config["database"]["local_password"]
 
 def generate_dockerfile():
     dockerfile_content = """FROM ghcr.io/mlflow/mlflow:latest

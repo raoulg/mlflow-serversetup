@@ -1,0 +1,14 @@
+[server]
+base_port = 5000
+
+[database]
+local_password = "mlflow_local"
+
+[teams]
+team_list = [
+    "team-a",
+    "team-b", 
+    "team-c",
+    "team-d",
+    "team-e"
+]
