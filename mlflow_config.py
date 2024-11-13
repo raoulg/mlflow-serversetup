@@ -9,8 +9,8 @@ def _load_config() -> dict:
     if not config_path.exists():
         raise FileNotFoundError
     else:
-    with config_path.open("rb") as f:
-        return tomllib.load(f)
+        with config_path.open("rb") as f:
+            return tomllib.load(f)
 
 _config = _load_config()
 
