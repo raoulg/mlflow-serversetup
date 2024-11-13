@@ -61,7 +61,7 @@ tee /etc/apt/sources.list.d/docker.list > /dev/null
 check_status "Docker repository addition"
 
 # Update package index again
-elseint_status "yellow" "Updating package index with Docker repository..."
+print_status "yellow" "Updating package index with Docker repository..."
 apt-get update
 check_status "Package index update with Docker repository"
 

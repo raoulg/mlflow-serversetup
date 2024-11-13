@@ -10,7 +10,7 @@ clean:
 	sudo rm -rf mlflow_artifacts postgres_data
 
 config:
-	python mlflow_config.py && ./setup.sh && sudo install-docker.sh
+	python mlflow_config.py && ./setup.sh && sudo ./install-docker.sh
 
 
 up:

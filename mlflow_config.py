@@ -87,11 +87,11 @@ volumes:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/2.0/mlflow/experiments/list"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks:
       - mlflow-net
