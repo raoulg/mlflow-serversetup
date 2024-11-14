@@ -8,13 +8,12 @@ NC := \033[0m # No Color
 SHELL := /bin/bash
 
 # Mark these targets as not corresponding to files
-.PHONY: health logs clean config up down check-docker check-dependencies
+.PHONY: help health logs clean config up down check-docker check-dependencies check-memory monitor-memory
 
 # Variables
 DOCKER_PORTS := 5000 5001 5002 5003 5004
 REQUIRED_BINARIES := curl docker docker-compose python3
-MIN_MEMORY_REQUIRED := 8192  # 8GB
-WARN_MEMORY_THRESHOLD := 7168  # 7GB
+MIN_AVAILABLE_MEMORY := 1024  # Minimum available memory in MB before warning
 
 help:
 	@echo -e "$(YELLOW)Available commands:$(NC)"
@@ -38,8 +37,6 @@ check-docker:
 		echo -e "$(GREEN)Docker is installed and running$(NC)"; \
 	fi
 
-.PHONY: help health logs clean config up down check-docker check-dependencies check-memory monitor-memory
-
 # Check if docker and dependencies are installed
 check-dependencies:
 	@for bin in $(REQUIRED_BINARIES); do \
@@ -50,31 +47,18 @@ check-dependencies:
 	done
 	@echo -e "$(GREEN)All required dependencies are installed$(NC)"
 
-check-docker:
-	@if ! command -v docker >/dev/null 2>&1; then \
-		echo -e "$(YELLOW)Docker not installed. Running install script...$(NC)"; \
-		sudo ./install-docker.sh; \
-	elif ! systemctl is-active --quiet docker; then \
-		echo -e "$(YELLOW)Docker installed but not running. Starting Docker...$(NC)"; \
-		sudo systemctl start docker; \
-	else \
-		echo -e "$(GREEN)Docker is installed and running$(NC)"; \
-	fi
 
 check-memory:
-	@total_mem=$$(free -m | awk '/^Mem:/{print $$2}'); \
-	used_by_docker=$$(docker stats --no-stream --format "{{.MemUsage}}" | awk '{split($$1,a,".");print a[1]}' | sed 's/[^0-9]//g' | awk '{sum+=$$1}END{print sum}') || echo 0; \
-	available_mem=$$(free -m | awk '/^Mem:/{print $$7}'); \
-	echo -e "$(YELLOW)Memory Status:$(NC)"; \
-	echo -e "Total System Memory: $(GREEN)$$total_mem MB$(NC)"; \
-	echo -e "Available Memory: $(GREEN)$$available_mem MB$(NC)"; \
-	echo -e "Memory Used by Docker: $(GREEN)$$used_by_docker MB$(NC)"; \
-	if [ $$total_mem -lt $(MIN_MEMORY_REQUIRED) ]; then \
-		echo -e "$(RED)Error: System has less than 8GB RAM$(NC)"; \
-		exit 1; \
-	elif [ $$available_mem -lt $(WARN_MEMORY_THRESHOLD) ]; then \
-		echo -e "$(YELLOW)Warning: Available memory below 7GB$(NC)"; \
-	fi
+   @total_mem=$$(free -m | awk '/^Mem:/{print $$2}'); \
+   used_by_docker=$$(docker stats --no-stream --format "{{.MemUsage}}" | awk '{split($$1,a,".");print a[1]}' | sed 's/[^0-9]//g' | awk '{sum+=$$1}END{print sum}') || echo 0; \
+   available_mem=$$(free -m | awk '/^Mem:/{print $$7}'); \
+   echo -e "$(YELLOW)Memory Status:$(NC)"; \
+   echo -e "Total System Memory: $(GREEN)$$total_mem MB$(NC)"; \
+   echo -e "Available Memory: $(GREEN)$$available_mem MB$(NC)"; \
+   echo -e "Memory Used by Docker: $(GREEN)$$used_by_docker MB$(NC)"; \
+   if [ $$available_mem -lt $(MIN_AVAILABLE_MEMORY) ]; then \
+   	echo -e "$(YELLOW)Warning: Less than 1GB memory available. System might become unstable.$(NC)"; \
+   fi
 
 monitor-memory:
 	@echo -e "$(YELLOW)Monitoring Docker container memory usage...$(NC)"
