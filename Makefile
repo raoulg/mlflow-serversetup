@@ -1,5 +1,3 @@
-# Colors for output
-GREEN := \033[0;32m
 RED := \033[0;31m
 YELLOW := \033[0;33m
 NC := \033[0m # No Color
@@ -12,7 +10,7 @@ SHELL := /bin/bash
 
 # Variables
 DOCKER_PORTS := 5000 5001 5002 5003 5004
-REQUIRED_BINARIES := curl docker docker-compose python3
+REQUIRED_BINARIES := curl docker python3
 MIN_AVAILABLE_MEMORY := 1024  # Minimum available memory in MB before warning
 
 help:
@@ -27,7 +25,7 @@ help:
 	@echo -e "  make monitor-memory$(NC) - Monitor container resource usage"
 
 check-docker:
-	@if ! command -v docker >/dev/null 2>&1; then \
+	@if ! command -v sudo docker >/dev/null 2>&1; then \
 		echo -e "$(YELLOW)Docker not installed. Running install script...$(NC)"; \
 		sudo ./install-docker.sh; \
 	elif ! systemctl is-active --quiet docker; then \
@@ -49,20 +47,21 @@ check-dependencies:
 
 
 check-memory:
-   @total_mem=$$(free -m | awk '/^Mem:/{print $$2}'); \
-   used_by_docker=$$(docker stats --no-stream --format "{{.MemUsage}}" | awk '{split($$1,a,".");print a[1]}' | sed 's/[^0-9]//g' | awk '{sum+=$$1}END{print sum}') || echo 0; \
-   available_mem=$$(free -m | awk '/^Mem:/{print $$7}'); \
-   echo -e "$(YELLOW)Memory Status:$(NC)"; \
-   echo -e "Total System Memory: $(GREEN)$$total_mem MB$(NC)"; \
-   echo -e "Available Memory: $(GREEN)$$available_mem MB$(NC)"; \
-   echo -e "Memory Used by Docker: $(GREEN)$$used_by_docker MB$(NC)"; \
-   if [ $$available_mem -lt $(MIN_AVAILABLE_MEMORY) ]; then \
-   	echo -e "$(YELLOW)Warning: Less than 1GB memory available. System might become unstable.$(NC)"; \
-   fi
+	@total_mem=$$(free -m | awk '/^Mem:/{print $$2}'); \
+	container_count=$$(sudo docker ps --format '{{.Names}}' | wc -l); \
+	used_by_docker=$$(sudo docker stats --no-stream --format "{{.MemUsage}}" | head -n$$container_count | awk '{split($$1,a,".");print a[1]}' | sed 's/[^0-9]//g' | awk '{sum+=$$1}END{print sum}') || echo 0; \
+	available_mem=$$(free -m | awk '/^Mem:/{print $$7}'); \
+	echo -e "$(YELLOW)Memory Status:$(NC)"; \
+	echo -e "Total System Memory: $(GREEN)$$total_mem MB$(NC)"; \
+	echo -e "Available Memory: $(GREEN)$$available_mem MB$(NC)"; \
+	echo -e "Memory Used by Docker: $(GREEN)$$used_by_docker MB$(NC)"; \
+	if [ $$available_mem -lt $(MIN_AVAILABLE_MEMORY) ]; then \
+		echo -e "$(YELLOW)Warning: Less than 1GB memory available. System might become unstable.$(NC)"; \
+	fi
 
 monitor-memory:
 	@echo -e "$(YELLOW)Monitoring Docker container memory usage...$(NC)"
-	@docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
+	@sudo sudo docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
 
 health: check-dependencies
 	@echo -e "$(YELLOW)Checking services health...$(NC)"
@@ -71,18 +70,17 @@ health: check-dependencies
 		echo -e "Health check status (port $$port): $(GREEN)$$status$(NC)"; \
 	done
 	@echo -e "\n$(YELLOW)Docker containers:$(NC)"
-	@sudo docker ps
+	@sudo sudo docker ps
 	@echo -e "\n$(YELLOW)Memory Status:$(NC)"
 	@make check-memory
-	@make monitor-memory
 
 logs: check-dependencies
 	@echo -e "$(YELLOW)Tailing docker compose logs...$(NC)"
-	@sudo docker compose logs -f
+	@sudo sudo docker compose logs -f
 
 clean: check-dependencies
 	@echo -e "$(YELLOW)Cleaning up containers and volumes...$(NC)"
-	@sudo docker compose down -v
+	@sudo sudo docker compose down -v
 	@sudo rm -rf mlflow_artifacts postgres_data
 	@echo -e "$(GREEN)Cleanup complete$(NC)"
 
@@ -93,11 +91,11 @@ config: check-dependencies check-docker
 
 up: check-dependencies check-docker check-memory
 	@echo -e "$(YELLOW)Starting containers...$(NC)"
-	@sudo docker compose up -d
+	@sudo sudo docker compose up -d
 	@echo -e "$(GREEN)Containers started$(NC)"
 	@make monitor-memory
 
 down: check-dependencies
 	@echo -e "$(YELLOW)Stopping containers...$(NC)"
-	@sudo docker compose down -v
+	@sudo sudo docker compose down -v
 	@echo -e "$(GREEN)Containers stopped$(NC)"
