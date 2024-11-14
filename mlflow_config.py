@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tomllib
 from pathlib import Path
 from string import Template
@@ -12,11 +13,13 @@ def _load_config() -> dict:
         with config_path.open("rb") as f:
             return tomllib.load(f)
 
+
 _config = _load_config()
 
 TEAMS: list[str] = _config["teams"]["team_list"]
 BASE_PORT: int = int(_config["server"]["base_port"])
 LOCAL_DB_PASSWORD: str = _config["database"]["local_password"]
+
 
 def generate_dockerfile():
     dockerfile_content = """FROM ghcr.io/mlflow/mlflow:latest
@@ -139,6 +142,18 @@ echo "Setup completed! You can now run: docker compose up -d"
     )
 
 
+def get_external_ip():
+    try:
+        # Using curl to get external IP
+        result = subprocess.run(
+            ["curl", "-s", "ifconfig.me"], capture_output=True, text=True
+        )
+        return result.stdout.strip()
+    except Exception as e:
+        print(f"Failed to get external IP: {e}")
+        return "localhost"  # Fallback to localhost if failed
+
+
 def main():
     # Generate Dockerfile first
     generate_dockerfile()
@@ -161,9 +176,10 @@ def main():
 """
 
     connection_details = []
+    external_ip = get_external_ip()
     for i, team in enumerate(TEAMS):
         port = BASE_PORT + i
-        details = f"- {team}: http://localhost:{port}"
+        details = f"- {team}: http://{external_ip}:{port}"
         connection_details.append(details)
 
     with open("team_urls.md", "w") as f:
