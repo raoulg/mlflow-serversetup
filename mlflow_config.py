@@ -87,7 +87,7 @@ volumes:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health || exit 1"]
+      test: ["CMD-SHELL", "curl", "-f", "http://0.0.0.0:5000/health || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 3
