@@ -116,25 +116,29 @@ volumes:
 
 
 def generate_setup_script():
-    # Create the team directories commands as a single string
+    # Create the team directories commands as a single string with existence checks
     mkdir_commands = "\n".join(
         [
-            f'mkdir -p "mlflow_artifacts/{team}"\nchmod 755 "mlflow_artifacts/{team}"'
+            f'if [ ! -d "mlflow_artifacts/{team}" ]; then\n'
+            f'  mkdir -p "mlflow_artifacts/{team}"\n'
+            f'  echo "Created directory for {team}"\n'
+            f"fi\n"
+            f'chmod 755 "mlflow_artifacts/{team}"'
             for team in TEAMS
         ]
     )
-
     setup_script = """#!/bin/bash
-
 echo "Creating artifacts directory structure..."
 mkdir -p mlflow_artifacts
-
 # Create team directories
 $mkdir_commands
-
 # Create simple .env file
-echo "LOCAL_DB_PASSWORD=$password" > .env
-
+if [ ! -f ".env" ]; then
+    echo "LOCAL_DB_PASSWORD=$password" > .env
+    echo "Created .env file"
+else
+    echo ".env file already exists"
+fi
 echo "Setup completed! You can now run: docker compose up -d"
 """
     return Template(setup_script).substitute(
