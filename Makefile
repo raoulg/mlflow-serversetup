@@ -1,6 +1,11 @@
 
 health:
 	@echo "Health check status: $$(curl -s http://localhost:5000/health)"
+	@echo "Health check status: $$(curl -s http://localhost:5001/health)"
+	@echo "Health check status: $$(curl -s http://localhost:5002/health)"
+	@echo "Health check status: $$(curl -s http://localhost:5003/health)"
+	@echo "Health check status: $$(curl -s http://localhost:5004/health)"
+	sudo docker ps
 
 logs:
 	sudo docker compose logs -f
@@ -20,5 +25,3 @@ down:
 	sudo docker compose down -v
 
 
-check:
-	sudo docker ps
